@@ -1,0 +1,13 @@
+@use "pages/all" as *;
+
+:root { --color-primary: #007a68; --color-primary-hover: #005d4f; }
+body { background: #f7faf9; }
+::selection { background: #cce5d9; color: #16392c; }
+a { text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid #00705b; outline-offset: 3px; }
+input, textarea { caret-color: #00705b; }
+button:disabled { opacity: .6; cursor: not-allowed; }
+button, input, select, textarea { font: inherit; }
+table { font-variant-numeric: tabular-nums; }
+.admin-page__table-wrap, .admin__header__nav { scrollbar-color: #729386 #edf4f0; scrollbar-width: thin; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

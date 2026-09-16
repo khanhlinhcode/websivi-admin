@@ -1,0 +1,57 @@
+.admin-state {
+  align-items: center;
+  background: var(--gradient-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  color: var(--color-muted);
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.admin-state__icon {
+  background: var(--gradient-skeleton);
+  background-size: 220% 100%;
+  border-radius: 999px;
+  display: block;
+  height: 8px;
+  width: min(150px, 70%);
+}
+
+.admin-state--loading .admin-state__icon {
+  animation: admin-state-shimmer 1.45s ease-in-out infinite;
+}
+
+.admin-state--error {
+  background: var(--gradient-error-state);
+  border-color: rgba(214, 69, 69, 0.22);
+  color: var(--color-danger-deep);
+}
+
+.admin-state strong {
+  color: var(--color-heading);
+}
+
+.admin-state button {
+  background: var(--gradient-primary);
+  border: 0;
+  border-radius: var(--radius-control);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+@keyframes admin-state-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}

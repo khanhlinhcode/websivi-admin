@@ -1,0 +1,74 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import axios from "api/axios";
+import {
+  createAdminBannerAPI,
+  getAdminAnalyticsAPI,
+  getAdminProductsAPI,
+  getAdminReviewsAPI,
+  getAdminSiteSettingsAPI,
+  reorderAdminProductImagesAPI,
+  updateAdminSiteSettingsAPI,
+} from "./request";
+
+vi.mock("api/axios", () => ({
+  default: vi.fn(),
+}));
+
+describe("getAdminProductsAPI", () => {
+  beforeEach(() => {
+    axios.mockReset();
+  });
+
+  it("requests the selected admin product page instead of a fixed first 50 items", async () => {
+    axios.mockResolvedValue({
+      data: [],
+      meta: { current_page: 3, last_page: 4, total: 75 },
+    });
+
+    await getAdminProductsAPI({ page: 3, per_page: 20 });
+
+    expect(axios).toHaveBeenCalledWith({
+      url: "/admin/products",
+      method: "GET",
+      params: {
+        page: 3,
+        per_page: 20,
+      },
+    });
+  });
+});
+
+describe("CMS and analytics request contracts", () => {
+  beforeEach(() => axios.mockReset());
+
+  it("uses the protected admin endpoints with explicit payloads", async () => {
+    axios.mockResolvedValue({});
+
+    await getAdminSiteSettingsAPI();
+    await updateAdminSiteSettingsAPI({ brand_name: "Farta" });
+    await getAdminReviewsAPI({ visibility: "hidden", page: 2 });
+    await getAdminAnalyticsAPI({ range: "90d" });
+    await reorderAdminProductImagesAPI(4, [8, 7]);
+
+    expect(axios.mock.calls.map(([config]) => config)).toEqual([
+      { url: "/admin/site-settings", method: "GET" },
+      { url: "/admin/site-settings", method: "PUT", data: { brand_name: "Farta" } },
+      { url: "/admin/reviews", method: "GET", params: { visibility: "hidden", page: 2 } },
+      { url: "/admin/analytics/overview", method: "GET", params: { range: "90d" } },
+      { url: "/admin/products/4/images/order", method: "PATCH", data: { image_ids: [8, 7] } },
+    ]);
+  });
+
+  it("builds multipart banner data without exposing provider fields", async () => {
+    axios.mockResolvedValue({});
+    const image = new File(["image"], "banner.png", { type: "image/png" });
+
+    await createAdminBannerAPI({ placement: "hero", alt_text_vi: "Hero", image });
+
+    const config = axios.mock.calls[0][0];
+    expect(config.url).toBe("/admin/banners");
+    expect(config.method).toBe("POST");
+    expect([...config.data.keys()]).toEqual(["placement", "alt_text_vi", "image"]);
+    expect(config.data.has("image_public_id")).toBe(false);
+  });
+});
