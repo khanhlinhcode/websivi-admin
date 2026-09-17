@@ -355,13 +355,20 @@ test("customer order, admin status flow and review moderation stay consistent", 
     await page.getByLabel("Tìm theo tên, số điện thoại, email").fill(String(orderId));
     await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
     for (const nextStatus of ["confirmed", "processing", "shipped", "delivered"]) {
-      const row = page.locator("tbody tr").filter({ hasText: `#${orderId}` });
+      const row = page.locator("tbody tr").filter({
+        has: page.getByRole("cell", { name: `#${orderId}`, exact: true }),
+      });
+      await expect(row).toBeVisible();
       await row.getByRole("button", { name: "Chi tiết", exact: true }).click();
+      await expect(row.locator(".admin-page__status-panel select")).toBeVisible();
       await row.locator(".admin-page__status-panel select").selectOption(nextStatus);
       const updated = page.waitForResponse(r => r.url() === `${api}/admin/orders/${orderId}/status` && r.request().method() === "PATCH");
+      const reloaded = page.waitForResponse(r => new URL(r.url()).pathname === "/api/admin/orders" && r.request().method() === "GET");
       await row.getByRole("button", { name: "Cập nhật trạng thái", exact: true }).click();
       await page.getByRole("dialog").getByRole("button", { name: "Xác nhận", exact: true }).click();
       expect((await updated).ok()).toBeTruthy();
+      expect((await reloaded).ok()).toBeTruthy();
+      await expect(row.locator(`.admin-page__status.is-${nextStatus}`)).toBeVisible();
     }
 
     const customerResult = await shop.evaluate(async ({ api, comment, orderId }) => {
