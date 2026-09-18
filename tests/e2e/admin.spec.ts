@@ -3,13 +3,14 @@ import path from "node:path";
 const api = "http://127.0.0.1:" + (process.env.E2E_BACKEND_PORT || "8003") + "/api";
 const store = "http://127.0.0.1:" + (process.env.E2E_STOREFRONT_PORT || "5177");
 const password = "SiviE2EPass123!";
-let adminLoginSequence = 0;
-async function login(page: Page, role = "admin") {
+async function login(page: Page, account: string) {
   await page.goto("/dang-nhap");
-  const account = role === "admin" ? `admin-${++adminLoginSequence}` : role;
   await page.getByLabel("Email").fill(`qa.${account}@example.test`);
   await page.locator('[name="password"]').fill(password);
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
+  await page.getByRole("button", { name: "Dùng mã khôi phục", exact: true }).click();
+  await page.getByLabel("Mã khôi phục", { exact: true }).fill(`E2E-${account.toUpperCase()}-RECOVERY`);
+  await page.getByRole("button", { name: "Xác minh", exact: true }).click();
   await expect(page).toHaveURL(/\/san-pham$/);
   await expect(page.locator("tbody").getByRole("button", { name: "Sửa", exact: true }).first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
@@ -38,7 +39,7 @@ test("admin is separate from the storefront and customer roles are rejected", as
 });
 
 test("admin password visibility, cookie session reload and real logout", async ({ page }) => {
-  await login(page);
+  await login(page, "admin-1");
   await page.reload();
   await expect(page.getByRole("heading", { name: "Quản lý sản phẩm", exact: true })).toBeVisible();
   const response = page.waitForResponse(r => r.url() === api + "/admin/logout" && r.request().method() === "POST");
@@ -66,7 +67,7 @@ test("staff can manage images but has no user management or product delete contr
 });
 
 test("product CRUD and image add, cover replace, delete persist and render on the storefront", async ({ page, browser }) => {
-  await login(page);
+  await login(page, "admin-2");
   await page.getByRole("button", { name: "Thêm sản phẩm", exact: true }).click();
   const name = "Ảnh QA " + Date.now();
   await page.locator('input[name="name"]').fill(name);
@@ -153,7 +154,7 @@ test("product CRUD and image add, cover replace, delete persist and render on th
 });
 
 test("invalid image selection reports an error without uploading", async ({ page }) => {
-  await login(page);
+  await login(page, "admin-3");
   await page.locator("tbody").getByRole("button", { name: "Sửa", exact: true }).first().click();
   await page.getByLabel("Chọn ảnh", { exact: true }).setInputFiles({ name: "bad.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg onload="alert(1)"/>') });
   await expect(page.locator(".image-upload [role=alert]")).toContainText("không quá 2 MB");
@@ -161,7 +162,7 @@ test("invalid image selection reports an error without uploading", async ({ page
 });
 
 test("existing management pages load after extraction", async ({ page }) => {
-  await login(page);
+  await login(page, "admin-4");
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   for (const [route, endpoint] of [["/danh-muc", "/admin/categories"], ["/don-hang", "/admin/orders"], ["/dashboard", "/admin/dashboard"], ["/ma-giam-gia", "/admin/coupons"], ["/nguoi-dung", "/admin/users"]]) {
@@ -175,7 +176,7 @@ test("existing management pages load after extraction", async ({ page }) => {
 });
 
 test("banner dialog supports keyboard focus and restores the trigger", async ({ page }) => {
-  await login(page);
+  await login(page, "admin-5");
   await page.goto("/banner");
   const trigger = page.getByRole("button", { name: "Thêm banner", exact: true });
   await trigger.click();
@@ -188,7 +189,7 @@ test("banner dialog supports keyboard focus and restores the trigger", async ({ 
 });
 
 test("CMS content and privacy-safe analytics flow from admin to storefront", async ({ page, browser }) => {
-  await login(page);
+  await login(page, "admin-6");
   const suffix = Date.now();
   const categoryName = `Danh mục CMS ${suffix}`;
   const productName = `Sản phẩm CMS ${suffix}`;
@@ -303,7 +304,7 @@ test("CMS content and privacy-safe analytics flow from admin to storefront", asy
 });
 
 test("customer order, admin status flow and review moderation stay consistent", async ({ page, browser }) => {
-  await login(page);
+  await login(page, "admin-7");
   const customer = await browser.newContext();
   const shop = await customer.newPage();
   const apiRoot = api.replace(/\/api$/, "");
@@ -406,10 +407,10 @@ test("customer order, admin status flow and review moderation stay consistent", 
   }
 });
 
-for (const width of [1440, 1024, 768, 320]) {
+for (const [index, width] of [1440, 1024, 768, 320].entries()) {
   test(`admin product page and editor fit ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 960 });
-    await login(page);
+    await login(page, `admin-${index + 8}`);
     await expect(page.getByRole("heading", { name: "Quản lý sản phẩm", exact: true })).toBeVisible();
     await page.screenshot({ path: `.impeccable/review/${width === 1440 ? "desktop" : "mobile"}.png`, fullPage: true });
     await page.locator("tbody").getByRole("button", { name: "Sửa", exact: true }).first().click();
