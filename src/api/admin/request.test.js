@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import axios from "api/axios";
 import {
   createAdminBannerAPI,
+  challengeAdminMfaAPI,
+  confirmAdminMfaAPI,
   getAdminAnalyticsAPI,
   getAdminProductsAPI,
   getAdminReviewsAPI,
   getAdminSiteSettingsAPI,
   reorderAdminProductImagesAPI,
+  setupAdminMfaAPI,
   updateAdminSiteSettingsAPI,
 } from "./request";
 
@@ -35,6 +38,24 @@ describe("getAdminProductsAPI", () => {
         per_page: 20,
       },
     });
+  });
+});
+
+describe("admin mfa request contracts", () => {
+  beforeEach(() => axios.mockReset());
+
+  it("keeps MFA credentials in request bodies only", async () => {
+    axios.mockResolvedValue({});
+
+    await setupAdminMfaAPI();
+    await confirmAdminMfaAPI("123456");
+    await challengeAdminMfaAPI("ABCDE-12345", true);
+
+    expect(axios.mock.calls.map(([config]) => config)).toEqual([
+      { url: "/admin/mfa/setup", method: "POST" },
+      { url: "/admin/mfa/confirm", method: "POST", data: { code: "123456" } },
+      { url: "/admin/mfa/challenge", method: "POST", data: { recovery_code: "ABCDE-12345" } },
+    ]);
   });
 });
 

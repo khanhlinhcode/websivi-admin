@@ -10,6 +10,23 @@ export const loginAdminAPI = async (data) => {
   });
 };
 
+export const setupAdminMfaAPI = async () => axios({
+  url: "/admin/mfa/setup",
+  method: "POST",
+});
+
+export const confirmAdminMfaAPI = async (code) => axios({
+  url: "/admin/mfa/confirm",
+  method: "POST",
+  data: { code },
+});
+
+export const challengeAdminMfaAPI = async (value, recovery = false) => axios({
+  url: "/admin/mfa/challenge",
+  method: "POST",
+  data: recovery ? { recovery_code: value } : { code: value },
+});
+
 export const getAdminMeAPI = async () => {
   return await axios({
     url: "/admin/me",

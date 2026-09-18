@@ -419,7 +419,16 @@
       "password": "Password",
       "button": "Login",
       "loading": "Logging in...",
-      "error": "Unable to login, please check again."
+      "error": "Unable to login, please check again.",
+      "mfaCode": "6-digit authentication code",
+      "verifyMfa": "Verify",
+      "mfaSetupDetail": "Add this key to your authenticator app, then enter the 6-digit code to finish setup.",
+      "recoveryCode": "Recovery code",
+      "useRecovery": "Use a recovery code",
+      "useTotp": "Use an authenticator code",
+      "recoveryTitle": "Save your recovery codes",
+      "recoveryDetail": "Each code works once. Store them safely; this list will not be shown again.",
+      "recoveryContinue": "I saved the codes, continue"
     },
     "accessDenied": "You do not have access to this page.",
     "viewStore": "View store",

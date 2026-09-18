@@ -419,7 +419,16 @@
       "password": "Mật khẩu",
       "button": "Đăng nhập",
       "loading": "Đang đăng nhập...",
-      "error": "Không đăng nhập được, vui lòng kiểm tra lại."
+      "error": "Không đăng nhập được, vui lòng kiểm tra lại.",
+      "mfaCode": "Mã xác thực 6 số",
+      "verifyMfa": "Xác minh",
+      "mfaSetupDetail": "Thêm khóa này vào ứng dụng xác thực, sau đó nhập mã 6 số để hoàn tất.",
+      "recoveryCode": "Mã khôi phục",
+      "useRecovery": "Dùng mã khôi phục",
+      "useTotp": "Dùng mã từ ứng dụng xác thực",
+      "recoveryTitle": "Lưu mã khôi phục",
+      "recoveryDetail": "Mỗi mã chỉ dùng được một lần. Hãy lưu chúng ở nơi an toàn; danh sách này sẽ không hiển thị lại.",
+      "recoveryContinue": "Tôi đã lưu mã, tiếp tục"
     },
     "accessDenied": "Bạn không có quyền truy cập mục này.",
     "viewStore": "Xem cửa hàng",
