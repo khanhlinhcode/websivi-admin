@@ -363,7 +363,10 @@ const AdminOrdersPage = () => {
                       </td>
                       <td>
                         <button
+                          type="button"
                           className="admin-page__button admin-page__button--ghost"
+                          disabled={isLoading}
+                          aria-expanded={isExpanded}
                           onClick={() =>
                             setExpandedId(isExpanded ? null : order.id)
                           }
