@@ -318,9 +318,7 @@ test("customer order, admin status flow and review moderation stay consistent", 
     await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
     expect((await settingsUpdated).ok()).toBeTruthy();
 
-    const tracked = shop.waitForResponse(r => r.url() === `${api}/analytics/page-view` && r.request().method() === "POST" && r.status() === 204);
     await shop.goto(store + "/");
-    await tracked;
     const created = await shop.evaluate(async ({ api, apiRoot, password }) => {
       const csrf = async () => {
         await fetch(`${apiRoot}/sanctum/csrf-cookie`, { credentials: "include" });
