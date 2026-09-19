@@ -8,7 +8,7 @@ import {
 } from "api/admin";
 import { AdminState, ConfirmModal, ImageUpload } from "component";
 import { formatter } from "utils/formatter";
-import { PRODUCT_IMAGE_OPTIONS, resolveProductImage } from "utils/productImages";
+import { resolveProductImage } from "utils/productImages";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { isAdmin } from "utils/adminAuth";
@@ -20,7 +20,7 @@ import "../admin.scss";
 const emptyProductForm = {
   name: "",
   slug: "",
-  img: PRODUCT_IMAGE_OPTIONS[0].value,
+  img: "",
   price: 0,
   inventory: 0,
   is_active: true,
@@ -144,15 +144,17 @@ const AdminProductsPage = () => {
     });
   };
 
-  const toPayload = () => ({
-    ...form,
-    price: Number(form.price),
-    inventory: Number(form.inventory),
-    is_active: Boolean(form.is_active),
-    category_id: Number(form.category_id),
-    images: undefined,
-    img: editingId && (form.images.length || !form.img) ? undefined : form.img,
-  });
+  const toPayload = () => {
+    const { images: _images, img: _img, ...values } = form;
+
+    return {
+      ...values,
+      price: Number(form.price),
+      inventory: Number(form.inventory),
+      is_active: Boolean(form.is_active),
+      category_id: Number(form.category_id),
+    };
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -281,19 +283,6 @@ const AdminProductsPage = () => {
                   placeholder="cam-tuoi"
                 />
               </label>
-              {!form.images.length && <label>
-                {t("admin.products.image")}
-                <select name="img" value={form.img} onChange={handleChange}>
-                  {!PRODUCT_IMAGE_OPTIONS.some((item) => item.value === form.img) && (
-                    <option value={form.img}>{t(form.img ? "admin.common.uploadedImage" : "admin.products.noImages")}</option>
-                  )}
-                  {PRODUCT_IMAGE_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>}
               <label>
                 {t("admin.products.category")}
                 <select
