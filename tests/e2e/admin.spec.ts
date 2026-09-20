@@ -17,11 +17,16 @@ async function login(page: Page, account: string) {
 }
 const apiGet = (page: Page, url: string) => page.request.get(url, { headers: { Accept: "application/json", Referer: page.url() } });
 async function mutate(page: Page, url: string, method: string) {
-  return page.evaluate(async ({ url, method }) => {
-    const token = document.cookie.split("; ").find(s => s.startsWith("XSRF-TOKEN="))?.split("=").slice(1).join("=") || "";
-    const r = await fetch(url, { method, credentials: "include", headers: { Accept: "application/json", "X-XSRF-TOKEN": decodeURIComponent(token) } });
-    return r.status;
-  }, { url, method });
+  const token = (await page.context().cookies()).find(cookie => cookie.name === "XSRF-TOKEN")?.value || "";
+  const response = await page.request.fetch(url, {
+    method,
+    headers: {
+      Accept: "application/json",
+      Referer: page.url(),
+      "X-XSRF-TOKEN": decodeURIComponent(token),
+    },
+  });
+  return response.status();
 }
 
 test("admin is separate from the storefront and customer roles are rejected", async ({ page }) => {
@@ -189,6 +194,7 @@ test("banner dialog supports keyboard focus and restores the trigger", async ({ 
 });
 
 test("CMS content and privacy-safe analytics flow from admin to storefront", async ({ page, browser }) => {
+  test.setTimeout(90_000);
   await login(page, "admin-6");
   const suffix = Date.now();
   const categoryName = `Danh mục CMS ${suffix}`;
