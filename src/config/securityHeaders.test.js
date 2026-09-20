@@ -11,4 +11,11 @@ describe("deployment security headers", () => {
     expect(headers).not.toContain("script-src *");
     expect(headers).not.toContain("'unsafe-eval'");
   });
+
+  it("keeps API requests same-origin when using the Pages proxy", () => {
+    const headers = buildSecurityHeaders("/api");
+
+    expect(headers).toContain("connect-src 'self'");
+    expect(headers).not.toContain("127.0.0.1");
+  });
 });

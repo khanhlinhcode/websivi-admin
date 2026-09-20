@@ -3,7 +3,7 @@ export const buildSecurityHeaders = (apiUrl) => {
   try {
     apiOrigin = new URL(apiUrl).origin;
   } catch {
-    apiOrigin = "http://127.0.0.1:8000";
+    apiOrigin = "";
   }
 
   const csp = [
@@ -16,7 +16,7 @@ export const buildSecurityHeaders = (apiUrl) => {
     // Existing React components use a small number of inline style attributes.
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://res.cloudinary.com",
-    `connect-src 'self' ${apiOrigin}`,
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}`,
     "font-src 'self' data:",
   ].join("; ");
 
