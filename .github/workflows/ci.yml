@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: khanhlinhcode/Farta_Market
-          ref: 3f2dddc09df22ac77ea62bd8970a13af7a8e5c5c
+          ref: f563965eaa1e228ab718250584c76f014f72d12e
           path: websivi
           persist-credentials: false
 

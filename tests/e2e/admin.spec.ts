@@ -274,7 +274,10 @@ test("CMS content and privacy-safe analytics flow from admin to storefront", asy
     await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
     expect((await settingsUpdated).ok()).toBeTruthy();
 
-    const tracked = shop.waitForResponse(r => r.url() === `${api}/analytics/page-view` && r.request().method() === "POST" && r.status() === 204);
+    const tracked = shop.waitForResponse(
+      r => r.url() === `${api}/analytics/page-view` && r.request().method() === "POST" && r.status() === 204,
+      { timeout: 20_000 },
+    );
     await shop.goto(store + "/");
     expect((await tracked).status()).toBe(204);
     await expect(shop.getByRole("heading", { name: brandName }).last()).toBeVisible();
