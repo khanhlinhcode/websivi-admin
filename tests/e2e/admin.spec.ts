@@ -327,23 +327,36 @@ test("customer order, admin status flow and review moderation stay consistent", 
     await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
     expect((await settingsUpdated).ok()).toBeTruthy();
 
-    await shop.goto(store + "/");
+    await shop.goto(store + "/", { waitUntil: "networkidle" });
     const created = await shop.evaluate(async ({ api, apiRoot, password }) => {
-      const csrf = async () => {
-        await fetch(`${apiRoot}/sanctum/csrf-cookie`, { credentials: "include" });
-        return decodeURIComponent(document.cookie.split("; ").find(row => row.startsWith("XSRF-TOKEN="))?.split("=").slice(1).join("=") || "");
+      const csrfFetch = async (url: string, init: RequestInit) => {
+        let response: Response | undefined;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const csrfResponse = await fetch(`${apiRoot}/sanctum/csrf-cookie`, {
+            credentials: "include",
+            headers: { Accept: "application/json" },
+          });
+          if (!csrfResponse.ok) throw new Error(`CSRF bootstrap failed with ${csrfResponse.status}`);
+          const token = decodeURIComponent(document.cookie.split("; ").find(row => row.startsWith("XSRF-TOKEN="))?.split("=").slice(1).join("=") || "");
+          if (!token) throw new Error("CSRF token cookie is missing");
+          response = await fetch(url, {
+            ...init,
+            credentials: "include",
+            headers: { ...init.headers, "X-XSRF-TOKEN": token },
+          });
+          if (response.status !== 419) return response;
+        }
+        return response as Response;
       };
-      let token = await csrf();
-      const loginResponse = await fetch(`${api}/login`, {
-        method: "POST", credentials: "include",
-        headers: { Accept: "application/json", "Content-Type": "application/json", "X-XSRF-TOKEN": token },
+      const loginResponse = await csrfFetch(`${api}/login`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({ email: "qa.customer@example.test", password }),
       });
-      token = await csrf();
-      const orderResponse = await fetch(`${api}/order`, {
-        method: "POST", credentials: "include",
+      const orderResponse = await csrfFetch(`${api}/order`, {
+        method: "POST",
         headers: {
-          Accept: "application/json", "Content-Type": "application/json", "X-XSRF-TOKEN": token,
+          Accept: "application/json", "Content-Type": "application/json",
           "X-Idempotency-Key": `e2e-order-${Date.now()}-customer`,
         },
         body: JSON.stringify({
@@ -379,12 +392,30 @@ test("customer order, admin status flow and review moderation stay consistent", 
       await expect(row.locator(`.admin-page__status.is-${nextStatus}`)).toBeVisible();
     }
 
-    const customerResult = await shop.evaluate(async ({ api, comment, orderId }) => {
-      const token = decodeURIComponent(document.cookie.split("; ").find(row => row.startsWith("XSRF-TOKEN="))?.split("=").slice(1).join("=") || "");
+    const customerResult = await shop.evaluate(async ({ api, apiRoot, comment, orderId }) => {
+      const csrfFetch = async (url: string, init: RequestInit) => {
+        let response: Response | undefined;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const csrfResponse = await fetch(`${apiRoot}/sanctum/csrf-cookie`, {
+            credentials: "include",
+            headers: { Accept: "application/json" },
+          });
+          if (!csrfResponse.ok) throw new Error(`CSRF bootstrap failed with ${csrfResponse.status}`);
+          const token = decodeURIComponent(document.cookie.split("; ").find(row => row.startsWith("XSRF-TOKEN="))?.split("=").slice(1).join("=") || "");
+          if (!token) throw new Error("CSRF token cookie is missing");
+          response = await fetch(url, {
+            ...init,
+            credentials: "include",
+            headers: { ...init.headers, "X-XSRF-TOKEN": token },
+          });
+          if (response.status !== 419) return response;
+        }
+        return response as Response;
+      };
       const orders = await fetch(`${api}/my-orders`, { credentials: "include", headers: { Accept: "application/json" } });
-      const review = await fetch(`${api}/products/1/reviews`, {
-        method: "POST", credentials: "include",
-        headers: { Accept: "application/json", "Content-Type": "application/json", "X-XSRF-TOKEN": token },
+      const review = await csrfFetch(`${api}/products/1/reviews`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({ rating: 5, comment }),
       });
       const orderBody = await orders.json();
@@ -393,7 +424,7 @@ test("customer order, admin status flow and review moderation stay consistent", 
         reviewStatus: review.status,
         review: await review.json(),
       };
-    }, { api, comment, orderId });
+    }, { api, apiRoot, comment, orderId });
     expect(customerResult.customerStatus).toBe("delivered");
     expect(customerResult.reviewStatus).toBe(201);
     const reviewId = customerResult.review.data.id;

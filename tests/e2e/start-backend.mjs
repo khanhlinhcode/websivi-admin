@@ -39,6 +39,7 @@ const env = {
   DB_USERNAME: mysql ? process.env.E2E_DB_USERNAME || "root" : "",
   DB_PASSWORD: mysql ? process.env.E2E_DB_PASSWORD || "" : "",
   SESSION_DRIVER: "database",
+  SESSION_ENCRYPT: "true",
   SESSION_COOKIE: "sivi_e2e_session",
   SESSION_DOMAIN: "",
   SESSION_SECURE_COOKIE: "false",
