@@ -12,11 +12,11 @@ export const buildSecurityHeaders = (apiUrl) => {
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    "script-src 'self'",
+    "script-src 'self' https://static.cloudflareinsights.com",
     // Existing React components use a small number of inline style attributes.
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https://res.cloudinary.com",
-    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}`,
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""} https://cloudflareinsights.com`,
     "font-src 'self' data:",
   ].join("; ");
 
