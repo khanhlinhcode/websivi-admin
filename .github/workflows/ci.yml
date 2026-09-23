@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: khanhlinhcode/BE_Farta-Market-
-          ref: 90aca6473391337504fb2a32750fe77accdb6ae3
+          ref: 08fcff73274bd72358a5cffecd504c72833331c1
           path: SVC01072023BE/SVC01072023BE
           persist-credentials: false
 
@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: khanhlinhcode/Farta_Market
-          ref: f563965eaa1e228ab718250584c76f014f72d12e
+          ref: 2ea3ae538f831a4f4b5235df7d20f07de59fc03d
           path: websivi
           persist-credentials: false
 
