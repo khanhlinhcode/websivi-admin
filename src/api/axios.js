@@ -9,6 +9,19 @@ let csrfCookieRequest = null;
 const CSRF_TIMEOUT_MS = 5000;
 const unsafeMethods = new Set(["post", "put", "patch", "delete"]);
 
+const clearXsrfHeader = (headers) => {
+  if (!headers) return;
+
+  if (typeof headers.delete === "function") {
+    headers.delete("X-XSRF-TOKEN");
+    headers.delete("x-xsrf-token");
+    return;
+  }
+
+  delete headers["X-XSRF-TOKEN"];
+  delete headers["x-xsrf-token"];
+};
+
 const hasXsrfTokenCookie = () => {
   if (typeof document === "undefined" || !document.cookie) {
     return false;
@@ -108,7 +121,9 @@ axiosInstance.interceptors.response.use(
 
     if (error.response?.status === 419 && config && unsafeMethods.has(method) && !config._csrfRetried) {
       config._csrfRetried = true;
+      clearXsrfHeader(config.headers);
       await getCsrfCookieAPI({ force: true });
+      clearXsrfHeader(config.headers);
       return axiosInstance.request(config);
     }
 
