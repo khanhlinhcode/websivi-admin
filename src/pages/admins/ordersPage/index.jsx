@@ -263,6 +263,7 @@ const AdminOrdersPage = () => {
             >
               <option value="">{t("admin.orders.allPaymentMethods")}</option>
               <option value="cod">{t("order.paymentMethods.cod")}</option>
+              <option value="sepay">{t("order.paymentMethods.sepay")}</option>
               <option value="vnpay">{t("order.paymentMethods.vnpay")}</option>
             </select>
             <select

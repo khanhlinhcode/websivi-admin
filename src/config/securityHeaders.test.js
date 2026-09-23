@@ -6,6 +6,7 @@ describe("deployment security headers", () => {
     const headers = buildSecurityHeaders("https://api.example.test/api");
 
     expect(headers).toContain("Content-Security-Policy:");
+    expect(headers).toContain("Strict-Transport-Security: max-age=31536000; includeSubDomains");
     expect(headers).toContain("connect-src 'self' https://api.example.test");
     expect(headers).toContain("https://static.cloudflareinsights.com");
     expect(headers).toContain("https://cloudflareinsights.com");

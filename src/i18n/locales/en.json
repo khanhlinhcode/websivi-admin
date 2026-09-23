@@ -122,7 +122,8 @@
     "paymentMethod": "Payment method",
     "paymentMethods": {
       "cod": "Cash on delivery",
-      "vnpay": "VNPay"
+      "sepay": "SePay VietQR bank transfer",
+      "vnpay": "VNPay (legacy order)"
     },
     "paidBadge": "Paid",
     "continueShopping": "Continue shopping",
@@ -612,20 +613,21 @@
     "discountAmount": "Discount",
     "paymentMethods": {
       "cod": "Cash on delivery (COD)",
-      "vnpay": "VNPay payment (ATM/Visa/QR)"
+      "sepay": "SePay VietQR bank transfer",
+      "vnpay": "VNPay (legacy order)"
     },
     "paymentDescriptions": {
       "cod": "Pay directly to the delivery staff.",
-      "vnpay": "Continue to the VNPay sandbox gateway for secure payment."
+      "sepay": "Scan VietQR and let the store confirm the incoming transfer automatically."
     },
     "placing": "Placing order...",
     "placeOrder": "Place order",
-    "payWithVnpay": "Pay with VNPay",
+    "payWithSepay": "Create VietQR",
     "confirm": "Confirm",
     "success": "Order placed successfully",
     "orderError": "Unable to place order, please try again.",
-    "paymentFailed": "VNPay payment failed or was cancelled. Please try again.",
-    "loginForVnpay": "Please log in to pay with VNPay.",
+    "paymentFailed": "The payment failed or was cancelled. Please try again.",
+    "loginForSepay": "Please log in to pay with SePay.",
     "emptyCart": "Your cart is empty.",
     "validation": {
       "fullNameRequired": "Please enter full name",

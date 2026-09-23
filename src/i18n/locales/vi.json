@@ -122,7 +122,8 @@
     "paymentMethod": "Phương thức thanh toán",
     "paymentMethods": {
       "cod": "Thanh toán khi nhận hàng",
-      "vnpay": "VNPay"
+      "sepay": "Chuyển khoản VietQR qua SePay",
+      "vnpay": "VNPay (đơn cũ)"
     },
     "paidBadge": "Đã thanh toán",
     "continueShopping": "Tiếp tục mua sắm",
@@ -612,20 +613,21 @@
     "discountAmount": "Giảm giá",
     "paymentMethods": {
       "cod": "Thanh toán khi nhận hàng (COD)",
-      "vnpay": "Thanh toán VNPay (ATM/Visa/QR)"
+      "sepay": "Chuyển khoản VietQR qua SePay",
+      "vnpay": "VNPay (đơn cũ)"
     },
     "paymentDescriptions": {
       "cod": "Bạn thanh toán trực tiếp cho nhân viên giao hàng.",
-      "vnpay": "Chuyển sang cổng VNPay sandbox để thanh toán an toàn."
+      "sepay": "Quét VietQR và hệ thống tự xác nhận khi tiền vào tài khoản."
     },
     "placing": "Đang đặt hàng...",
     "placeOrder": "Đặt hàng",
-    "payWithVnpay": "Thanh toán qua VNPay",
+    "payWithSepay": "Tạo mã VietQR",
     "confirm": "Xác nhận",
     "success": "Đặt hàng thành công",
     "orderError": "Không đặt được hàng, vui lòng thử lại.",
-    "paymentFailed": "Thanh toán VNPay thất bại hoặc đã bị hủy. Vui lòng thử lại.",
-    "loginForVnpay": "Vui lòng đăng nhập để thanh toán qua VNPay.",
+    "paymentFailed": "Thanh toán thất bại hoặc đã bị hủy. Vui lòng thử lại.",
+    "loginForSepay": "Vui lòng đăng nhập để thanh toán qua SePay.",
     "emptyCart": "Giỏ hàng đang trống.",
     "validation": {
       "fullNameRequired": "Vui lòng nhập họ và tên",
