@@ -40,6 +40,16 @@ const LoginAdPage = () => {
   const [recoveryCodes, setRecoveryCodes] = useState([]);
   const [pendingUser, setPendingUser] = useState(null);
   const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const [retryAfter, setRetryAfter] = useState(0);
+
+  useEffect(() => {
+    if (retryAfter <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setRetryAfter((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [retryAfter]);
 
   useEffect(() => {
     clearAdminSession();
@@ -92,12 +102,42 @@ const LoginAdPage = () => {
       const response = await challengeAdminMfaAPI(mfaCode, useRecoveryCode);
       finishLogin(response.user);
     } catch (err) {
-      setError(
-        err?.response?.data?.message || t("admin.login.error")
-      );
+      const status = err?.response?.status;
+      if (status === 401 && step !== "credentials") {
+        resetToCredentials();
+        setError(t("admin.login.sessionExpired"));
+      } else if (status === 419) {
+        setError(t("admin.login.csrfExpired"));
+      } else if (status === 422 && step !== "credentials") {
+        setError(t(useRecoveryCode ? "admin.login.invalidRecovery" : "admin.login.invalidTotp"));
+      } else if (status === 429) {
+        const responseHeaders = err?.response?.headers;
+        const seconds = Number(
+          responseHeaders?.get?.("retry-after") ?? responseHeaders?.["retry-after"]
+        );
+        setRetryAfter(Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 60);
+        setError(t("admin.login.rateLimited"));
+      } else if (["ECONNABORTED", "ETIMEDOUT"].includes(err?.code)) {
+        setError(t("admin.login.timeout"));
+      } else if (!err?.response && (err?.isAxiosError || err?.code === "ERR_NETWORK")) {
+        setError(t("admin.login.networkError"));
+      } else {
+        setError(err?.response?.data?.message || t("admin.login.error"));
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetToCredentials = () => {
+    setStep("credentials");
+    setForm((current) => ({ ...current, password: "" }));
+    setMfaCode("");
+    setMfaSetup(null);
+    setRecoveryCodes([]);
+    setPendingUser(null);
+    setUseRecoveryCode(false);
+    setRetryAfter(0);
   };
 
   const finishLogin = (user) => {
@@ -106,6 +146,13 @@ const LoginAdPage = () => {
       replace: true,
     });
   };
+
+  const validMfaCode = useRecoveryCode
+    ? /^[A-Z0-9]{5}-[A-Z0-9]{5}$/.test(mfaCode)
+    : /^\d{6}$/.test(mfaCode);
+  const submitDisabled = isLoading
+    || retryAfter > 0
+    || (step !== "credentials" && !validMfaCode);
 
   if (step === "recovery-codes") {
     return (
@@ -184,9 +231,19 @@ const LoginAdPage = () => {
                 value={mfaCode}
                 inputMode={useRecoveryCode ? "text" : "numeric"}
                 autoComplete="one-time-code"
-                onChange={(event) => setMfaCode(event.target.value.trim())}
+                maxLength={useRecoveryCode ? 11 : 6}
+                pattern={useRecoveryCode ? "[A-Za-z0-9]{5}-[A-Za-z0-9]{5}" : "[0-9]{6}"}
+                aria-describedby="mfa-code-help"
+                onChange={(event) => setMfaCode(
+                  useRecoveryCode
+                    ? event.target.value.toUpperCase().replace(/\s/g, "").slice(0, 11)
+                    : event.target.value.replace(/\D/g, "").slice(0, 6)
+                )}
                 required
               />
+              <p id="mfa-code-help" className="login__helper">
+                {useRecoveryCode ? t("admin.login.recoveryHelp") : t("admin.login.totpHelp")}
+              </p>
               {step === "challenge" && (
                 <button
                   type="button"
@@ -194,6 +251,7 @@ const LoginAdPage = () => {
                   onClick={() => {
                     setUseRecoveryCode((current) => !current);
                     setMfaCode("");
+                    setError("");
                   }}
                 >
                   {useRecoveryCode ? t("admin.login.useTotp") : t("admin.login.useRecovery")}
@@ -202,13 +260,26 @@ const LoginAdPage = () => {
             </div>
           )}
           {error && <p className="login__error" role="alert">{error}</p>}
-          <button type="submit" className="login__button" disabled={isLoading}>
+          {retryAfter > 0 && (
+            <p className="login__cooldown" role="status">
+              {t("admin.login.retryCountdown", { seconds: retryAfter })}
+            </p>
+          )}
+          <button type="submit" className="login__button" disabled={submitDisabled}>
             {isLoading
               ? t("admin.login.loading")
               : step === "credentials"
               ? t("admin.login.button")
               : t("admin.login.verifyMfa")}
           </button>
+          {step !== "credentials" && (
+            <button type="button" className="login__secondary-button" onClick={() => {
+              resetToCredentials();
+              setError("");
+            }}>
+              {t("admin.login.backToLogin")}
+            </button>
+          )}
         </form>
       </div>
     </div>

@@ -3,13 +3,17 @@ import path from "node:path";
 const api = "http://127.0.0.1:" + (process.env.E2E_BACKEND_PORT || "8003") + "/api";
 const store = "http://127.0.0.1:" + (process.env.E2E_STOREFRONT_PORT || "5177");
 const password = "SiviE2EPass123!";
+const recoveryCode = (account: string) => {
+  const value = account.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10).padEnd(10, "X");
+  return `${value.slice(0, 5)}-${value.slice(5)}`;
+};
 async function login(page: Page, account: string) {
   await page.goto("/dang-nhap");
   await page.getByLabel("Email").fill(`qa.${account}@example.test`);
   await page.locator('[name="password"]').fill(password);
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
   await page.getByRole("button", { name: "Dùng mã khôi phục", exact: true }).click();
-  await page.getByLabel("Mã khôi phục", { exact: true }).fill(`E2E-${account.toUpperCase()}-RECOVERY`);
+  await page.getByLabel("Mã khôi phục", { exact: true }).fill(recoveryCode(account));
   await page.getByRole("button", { name: "Xác minh", exact: true }).click();
   await expect(page).toHaveURL(/\/san-pham$/);
   await expect(page.locator("tbody").getByRole("button", { name: "Sửa", exact: true }).first()).toBeVisible();
