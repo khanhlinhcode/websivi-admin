@@ -117,6 +117,18 @@ export const getAdminProductsAPI = async (params = {}) => {
   });
 };
 
+export const getAdminMediaAPI = async (params = {}) => {
+  return await axios({
+    url: "/admin/media",
+    method: "GET",
+    params: {
+      ...params,
+      page: params.page || 1,
+      per_page: params.per_page || 24,
+    },
+  });
+};
+
 export const uploadAdminProductImageAPI = async (id, file) => {
   const formData = new FormData();
   formData.append("image", file);
@@ -136,6 +148,18 @@ export const uploadAdminProductImagesAPI = async (id, files = []) => {
     url: `/admin/products/${id}/images`,
     method: "POST",
     data: formData,
+  });
+};
+
+export const reuseAdminProductImageAPI = async (id, media, asPrimary = false) => {
+  return await axios({
+    url: `/admin/products/${id}/images/reuse`,
+    method: "POST",
+    data: {
+      media_source_type: media.source_type,
+      media_source_id: media.source_id,
+      as_primary: asPrimary,
+    },
   });
 };
 
@@ -276,6 +300,17 @@ export const uploadAdminCategoryImageAPI = async (id, file) => {
 
 export const deleteAdminCategoryImageAPI = async (id) => {
   return await axios({ url: `/admin/categories/${id}/image`, method: "DELETE" });
+};
+
+export const reuseAdminCategoryImageAPI = async (id, media) => {
+  return await axios({
+    url: `/admin/categories/${id}/image/reuse`,
+    method: "POST",
+    data: {
+      media_source_type: media.source_type,
+      media_source_id: media.source_id,
+    },
+  });
 };
 
 export const setAdminProductPrimaryImageAPI = async (id) => {

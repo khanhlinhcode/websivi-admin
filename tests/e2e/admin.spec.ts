@@ -60,6 +60,19 @@ test("admin password visibility, cookie session reload and real logout", async (
   expect((await apiGet(page, api + "/admin/me")).status()).toBe(401);
 });
 
+test("admin shell persists during client-side navigation", async ({ page }) => {
+  await login(page, "admin-12");
+  const sidebar = page.locator("#admin-sidebar");
+  await sidebar.evaluate(element => element.setAttribute("data-e2e-shell", "persistent"));
+
+  await page.getByRole("button", { name: "Tổng quan", exact: true }).click();
+  await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(sidebar).toHaveAttribute("data-e2e-shell", "persistent");
+});
+
 test("staff can manage images but has no user management or product delete control", async ({ page }) => {
   await login(page, "staff");
   await expect(page.locator("nav").getByRole("link", { name: "Người dùng" })).toHaveCount(0);
@@ -92,7 +105,7 @@ test("product CRUD and image add, cover replace, delete persist and render on th
     const fixture = (n: number) => path.resolve(`src/assets/users/images/featured/feature-${n}.png`);
     await picker.setInputFiles([fixture(1), fixture(2)]);
     const added = page.waitForResponse(r => r.url() === `${api}/admin/products/${product.id}/images`);
-    await page.getByRole("button", { name: "Tải ảnh lên", exact: true }).click();
+    await page.getByRole("button", { name: "Tải 2 ảnh", exact: true }).click();
     const uploaded = await added;
     expect(uploaded.status()).toBe(201);
     const initial = (await uploaded.json()).product;
@@ -110,7 +123,7 @@ test("product CRUD and image add, cover replace, delete persist and render on th
     await page.getByLabel("Thay ảnh đại diện", { exact: true }).check();
     await picker.setInputFiles(fixture(3));
     const replaced = page.waitForResponse(r => r.url() === `${api}/admin/products/${product.id}/image`);
-    await page.getByRole("button", { name: "Tải ảnh lên", exact: true }).click();
+    await page.getByRole("button", { name: "Tải 1 ảnh", exact: true }).click();
     const replacement = (await (await replaced).json()).product;
     await shop.reload();
     await expect(shop.locator(".product__detail__pic-main img").first()).toHaveAttribute("src", replacement.img);
@@ -163,14 +176,14 @@ test("invalid image selection reports an error without uploading", async ({ page
   await page.locator("tbody").getByRole("button", { name: "Sửa", exact: true }).first().click();
   await page.getByLabel("Chọn ảnh", { exact: true }).setInputFiles({ name: "bad.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg onload="alert(1)"/>') });
   await expect(page.locator(".image-upload [role=alert]")).toContainText("không quá 2 MB");
-  await expect(page.locator(".image-upload").getByRole("button", { name: "Tải ảnh lên", exact: true })).toBeDisabled();
+  await expect(page.locator(".image-upload").getByRole("button", { name: "Tải 0 ảnh", exact: true })).toBeDisabled();
 });
 
 test("existing management pages load after extraction", async ({ page }) => {
   await login(page, "admin-4");
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  for (const [route, endpoint] of [["/danh-muc", "/admin/categories"], ["/don-hang", "/admin/orders"], ["/dashboard", "/admin/dashboard"], ["/ma-giam-gia", "/admin/coupons"], ["/nguoi-dung", "/admin/users"]]) {
+  for (const [route, endpoint] of [["/danh-muc", "/admin/categories"], ["/thu-vien-anh", "/admin/media"], ["/don-hang", "/admin/orders"], ["/dashboard", "/admin/dashboard"], ["/ma-giam-gia", "/admin/coupons"], ["/nguoi-dung", "/admin/users"]]) {
     const response = page.waitForResponse(r => new URL(r.url()).pathname === "/api" + endpoint);
     await page.goto(route);
     expect((await response).ok()).toBeTruthy();
@@ -246,7 +259,11 @@ test("CMS content and privacy-safe analytics flow from admin to storefront", asy
     await dialog.getByLabel("Liên kết").fill(`/san-pham/chi-tiet/${productId}`);
     await dialog.getByLabel("Bắt đầu").fill("2026-09-01T00:00");
     await dialog.getByLabel("Kết thúc").fill("2026-09-30T23:59");
-    await dialog.getByLabel("Ảnh banner").setInputFiles(fixture);
+    await dialog.getByRole("button", { name: "Chọn từ tất cả ảnh", exact: true }).click();
+    await dialog.getByLabel("Tìm ảnh", { exact: true }).fill(categoryName);
+    await dialog.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
+    await dialog.getByRole("button", { name: new RegExp(categoryName) }).click();
+    await expect(dialog.getByText(`Ảnh đã chọn từ thư viện: ${categoryName}`)).toBeVisible();
     const bannerCreated = page.waitForResponse(r => r.url() === `${api}/admin/banners` && r.request().method() === "POST");
     await dialog.getByRole("button", { name: "Lưu", exact: true }).click();
     bannerId = (await (await bannerCreated).json()).id;
@@ -309,6 +326,46 @@ test("CMS content and privacy-safe analytics flow from admin to storefront", asy
     if (productId) await mutate(page, `${api}/admin/products/${productId}`, "DELETE");
     if (categoryId) await mutate(page, `${api}/admin/categories/${categoryId}`, "DELETE");
     await customer.close();
+  }
+});
+
+test("shared media library renders and remains usable on desktop and mobile", async ({ page }) => {
+  await login(page, "admin-13");
+  const name = `Media visual ${Date.now()}`;
+  let productId: number | null = null;
+  let imageId: number | null = null;
+
+  try {
+    await page.getByRole("button", { name: "Thêm sản phẩm", exact: true }).click();
+    const editor = page.locator(".admin-products__editor form");
+    await editor.locator('input[name="name"]').fill(name);
+    await editor.locator('input[name="price"]').fill("25000");
+    await editor.locator('input[name="inventory"]').fill("5");
+    await editor.locator('textarea[name="sort_description"]').fill("Ảnh kiểm thử thư viện dùng chung");
+    await editor.locator('textarea[name="description"]').fill("Nội dung kiểm thử thư viện dùng chung");
+    const productCreated = page.waitForResponse(r => r.url() === `${api}/admin/products` && r.request().method() === "POST");
+    await editor.getByRole("button", { name: "Tạo sản phẩm", exact: true }).click();
+    productId = (await (await productCreated).json()).id;
+
+    await page.getByLabel("Chọn ảnh", { exact: true }).setInputFiles(path.resolve("src/assets/users/images/featured/feature-2.png"));
+    const imageCreated = page.waitForResponse(r => r.url() === `${api}/admin/products/${productId}/images` && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Tải 1 ảnh", exact: true }).click();
+    imageId = (await (await imageCreated).json()).images[0].id;
+
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await page.goto("/thu-vien-anh");
+    await expect(page.getByRole("img", { name })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: ".impeccable/review/media-desktop.png", fullPage: true });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload();
+    await expect(page.getByRole("img", { name })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: ".impeccable/review/media-mobile.png", fullPage: true });
+  } finally {
+    if (imageId) await mutate(page, `${api}/admin/product-images/${imageId}`, "DELETE");
+    if (productId) await mutate(page, `${api}/admin/products/${productId}`, "DELETE");
   }
 });
 

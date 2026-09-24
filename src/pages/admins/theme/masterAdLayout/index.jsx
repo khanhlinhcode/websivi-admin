@@ -6,10 +6,12 @@ import HeaderAD from "../header";
 const MasterADLayout = ({ children, ...props }) => {
   const location = useLocation();
   const isLoginPage = location.pathname.startsWith(ROUTERS.ADMIN.LOGIN);
+  if (isLoginPage) return children;
+
   return (
-    <div {...props}>
-      {!isLoginPage && <HeaderAD />}
-      {children}
+    <div className="admin-shell" {...props}>
+      <HeaderAD />
+      <div className="admin-shell__content">{children}</div>
     </div>
   );
 };

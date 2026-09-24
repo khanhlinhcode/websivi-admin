@@ -2,6 +2,7 @@ export const ROUTERS = {
   ADMIN: {
     LOGIN: "/dang-nhap",
     PRODUCTS: "/san-pham",
+    MEDIA: "/thu-vien-anh",
     DASHBOARD: "/dashboard",
     ORDERS: "/don-hang",
     CATEGORIES: "/danh-muc",

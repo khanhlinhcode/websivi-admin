@@ -2,13 +2,16 @@ import { memo, useEffect, useRef, useState } from "react";
 import {
   deleteAdminProductImageAPI,
   reorderAdminProductImagesAPI,
+  reuseAdminProductImageAPI,
   setAdminProductPrimaryImageAPI,
   uploadAdminProductImageAPI,
   uploadAdminProductImagesAPI,
 } from "api/admin";
 import { resolveProductImage } from "utils/productImages";
+import { ADMIN_IMAGE_ACCEPT, formatAdminImageSize, isValidAdminImage } from "utils/imageFiles";
 import { useTranslation } from "react-i18next";
 import ConfirmModal from "component/ConfirmModal";
+import MediaPicker from "component/MediaPicker";
 import "./style.scss";
 
 function ImageUpload({ productId, value, images = [], onUploaded, onDeleted, onBusyChange, disabled = false }) {
@@ -32,8 +35,10 @@ function ImageUpload({ productId, value, images = [], onUploaded, onDeleted, onB
   const changeMode = (event) => { setMode(event.target.value); setFiles([]); input.current.value = ""; };
   const selectFiles = (event) => {
     const selected = Array.from(event.target.files || []);
+    const availableSlots = Math.max(0, 8 - images.length);
+    const selectionLimit = mode === "primary" ? Math.min(1, availableSlots) : availableSlots;
     setError(""); setMessage("");
-    if (selected.length > (mode === "primary" ? 1 : 8) || selected.some((file) => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024)) {
+    if (!selected.length || selected.length > selectionLimit || selected.some((file) => !isValidAdminImage(file))) {
       setError(t("admin.products.invalidFiles")); setFiles([]); event.target.value = ""; return;
     }
     setFiles(selected);
@@ -51,6 +56,20 @@ function ImageUpload({ productId, value, images = [], onUploaded, onDeleted, onB
       onUploaded(response.product.img, response.product);
       setFiles([]); input.current.value = ""; setMessage(t("admin.uploadSuccess"));
     } catch (err) { fail(err); } finally { finish(); }
+  };
+  const reuse = async (media) => {
+    if (locked || images.length >= 8) return;
+    start();
+    try {
+      const response = await reuseAdminProductImageAPI(productId, media, mode === "primary");
+      onUploaded(response.product.img, response.product);
+      setMessage(t("admin.media.reused"));
+    } catch (err) {
+      fail(err);
+      throw err;
+    } finally {
+      finish();
+    }
   };
   const remove = async () => {
     if (locked || !pendingDelete) return;
@@ -109,16 +128,24 @@ function ImageUpload({ productId, value, images = [], onUploaded, onDeleted, onB
         </div>
         {mode === "primary" && <p>{t("admin.products.replaceHelp")}</p>}
         <label className="image-upload__choose">{t("admin.products.chooseFiles")}
-          <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" multiple={mode === "gallery"} disabled={locked} onChange={selectFiles} aria-describedby="image-help" />
+          <input ref={input} type="file" accept={ADMIN_IMAGE_ACCEPT} multiple={mode === "gallery"} disabled={locked || images.length >= 8} onChange={selectFiles} aria-describedby="image-help" />
         </label>
         <p id="image-help">{t("admin.products.imageHelp")}</p>
         {files.length > 0 && <div className="image-upload__previews">
-          {previews.map((url, i) => <img key={url} src={url} alt={files[i]?.name || ""} />)}
+          {previews.map((url, i) => <figure key={url}>
+            <img src={url} alt={files[i]?.name || ""} />
+            <figcaption>
+              <strong>{files[i]?.name}</strong>
+              <span>{files[i]?.type.replace("image/", "").toUpperCase()} · {formatAdminImageSize(files[i]?.size)}</span>
+            </figcaption>
+          </figure>)}
           <p>{t("admin.products.selectedFiles", { count: files.length })}</p>
         </div>}
         <button type="button" className="admin-page__button" disabled={locked || !files.length} onClick={upload}>
-          {busy ? t("admin.products.uploading") : t("admin.products.uploadImages")}
+          {busy ? t("admin.products.uploading") : t("admin.products.uploadImagesCount", { count: files.length })}
         </button>
+        <MediaPicker onSelect={reuse} disabled={locked || images.length >= 8} />
+        {images.length >= 8 && <p>{t("admin.products.galleryFull")}</p>}
         {images.length ? <ul className="image-upload__gallery">
           {images.map((image, index) => <li key={image.id}>
             <img src={resolveProductImage(image.url)} alt={`${t("admin.products.image")} ${index + 1}`} />

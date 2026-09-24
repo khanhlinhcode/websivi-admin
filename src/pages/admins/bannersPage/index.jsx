@@ -7,9 +7,10 @@ import {
   getAdminBannersAPI,
   updateAdminBannerAPI,
 } from "api/admin";
-import { AdminState, ConfirmModal } from "component";
+import { AdminState, ConfirmModal, MediaPicker } from "component";
 import { isAdmin } from "utils/adminAuth";
 import { selectAdminUser } from "../../../redux/authSlice";
+import { ADMIN_IMAGE_ACCEPT, formatAdminImageSize, isValidAdminImage } from "utils/imageFiles";
 import "../admin.scss";
 
 const emptyForm = {
@@ -25,6 +26,7 @@ function AdminBannersPage() {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState(null);
+  const [selectedMedia, setSelectedMedia] = useState(null);
   const [open, setOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +34,8 @@ function AdminBannersPage() {
   const [message, setMessage] = useState("");
   const dialogTitle = useRef(null);
   const previousFocus = useRef(null);
-  const preview = useMemo(() => form.image ? URL.createObjectURL(form.image) : editing?.image_url || "", [form.image, editing]);
+  const imageInput = useRef(null);
+  const preview = useMemo(() => form.image ? URL.createObjectURL(form.image) : selectedMedia?.url || editing?.image_url || "", [form.image, selectedMedia, editing]);
   useEffect(() => () => { if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview); }, [preview]);
 
   const load = async () => {
@@ -59,9 +62,10 @@ function AdminBannersPage() {
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
     if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   };
-  const startCreate = () => { setEditing(null); setForm(emptyForm); openDialog(); setError(""); setMessage(""); };
+  const startCreate = () => { setEditing(null); setSelectedMedia(null); setForm(emptyForm); openDialog(); setError(""); setMessage(""); };
   const startEdit = (item) => {
     setEditing(item);
+    setSelectedMedia(null);
     setForm({
       placement: item.placement, title_vi: item.title_vi || "", title_en: item.title_en || "",
       subtitle_vi: item.subtitle_vi || "", subtitle_en: item.subtitle_en || "",
@@ -74,18 +78,45 @@ function AdminBannersPage() {
   };
   const change = (event) => {
     const { name, value, type, checked, files } = event.target;
-    setForm((current) => ({ ...current, [name]: type === "checkbox" ? checked : type === "file" ? files?.[0] || null : value }));
+    if (type === "file") {
+      const file = files?.[0] || null;
+      setError("");
+      if (file && !isValidAdminImage(file)) {
+        event.target.value = "";
+        setForm((current) => ({ ...current, image: null }));
+        setError(t("admin.products.invalidFiles"));
+        return;
+      }
+      setSelectedMedia(null);
+      setForm((current) => ({ ...current, image: file }));
+      return;
+    }
+    setForm((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
+  };
+  const selectExistingImage = (media) => {
+    setSelectedMedia(media);
+    setForm((current) => ({ ...current, image: null }));
+    setError("");
+    if (imageInput.current) imageInput.current.value = "";
   };
   const save = async (event) => {
     event.preventDefault();
-    if (!editing && !form.image) { setError(t("admin.banners.requiredImage")); return; }
+    if (!editing && !form.image && !selectedMedia) { setError(t("admin.banners.requiredImage")); return; }
     setBusy(true); setError(""); setMessage("");
-    const payload = { ...form, is_active: form.is_active ? 1 : 0, sort_order: Number(form.sort_order) };
+    const payload = {
+      ...form,
+      is_active: form.is_active ? 1 : 0,
+      sort_order: Number(form.sort_order),
+      ...(selectedMedia ? {
+        media_source_type: selectedMedia.source_type,
+        media_source_id: selectedMedia.source_id,
+      } : {}),
+    };
     try {
       if (editing) await updateAdminBannerAPI(editing.id, payload);
       else await createAdminBannerAPI(payload);
       setMessage(t(editing ? "admin.banners.updated" : "admin.banners.created"));
-      closeDialog(); setEditing(null); setForm(emptyForm); await load();
+      closeDialog(); setEditing(null); setSelectedMedia(null); setForm(emptyForm); await load();
     } catch (err) { setError(Object.values(err?.response?.data?.errors || {}).flat()[0] || err?.response?.data?.message || t("admin.banners.saveError")); }
     finally { setBusy(false); }
   };
@@ -112,7 +143,7 @@ function AdminBannersPage() {
     <label>{t("admin.banners.placement")}<select name="placement" value={form.placement} onChange={change}><option value="hero">{t("admin.banners.hero")}</option><option value="home_promo">{t("admin.banners.promo")}</option></select></label>
     {[['title_vi','titleVi'],['title_en','titleEn'],['subtitle_vi','subtitleVi'],['subtitle_en','subtitleEn'],['button_label_vi','buttonVi'],['button_label_en','buttonEn'],['alt_text_vi','altVi'],['alt_text_en','altEn'],['link_url','link']].map(([name,key]) => <label key={name}>{t(`admin.banners.${key}`)}<input name={name} value={form[name]} onChange={change} required={name.startsWith('alt_text')} /></label>)}
     <div className="admin-page__form-grid"><label>{t("admin.banners.sortOrder")}<input type="number" min="0" name="sort_order" value={form.sort_order} onChange={change}/></label><label>{t("admin.banners.startsAt")}<input type="datetime-local" name="starts_at" value={form.starts_at} onChange={change}/></label><label>{t("admin.banners.endsAt")}<input type="datetime-local" name="ends_at" value={form.ends_at} onChange={change}/></label></div>
-    <label>{t("admin.banners.image")}<input type="file" name="image" accept="image/jpeg,image/png,image/webp" onChange={change} required={!editing}/></label>{preview && <div className="admin-banner-previews"><figure><figcaption>{t("admin.banners.desktopPreview")}</figcaption><img className="admin-banner-previews__desktop" src={preview} alt={form.alt_text_vi || t("admin.banners.currentImage")}/></figure><figure><figcaption>{t("admin.banners.mobilePreview")}</figcaption><img className="admin-banner-previews__mobile" src={preview} alt={form.alt_text_vi || t("admin.banners.currentImage")}/></figure></div>}<label className="admin-page__checkbox"><input type="checkbox" name="is_active" checked={form.is_active} onChange={change}/>{t("admin.banners.active")}</label>
+    <label>{t("admin.banners.image")}<input ref={imageInput} type="file" name="image" accept={ADMIN_IMAGE_ACCEPT} onChange={change} required={!editing && !selectedMedia}/></label><MediaPicker onSelect={selectExistingImage} disabled={busy}/>{form.image && <p className="admin-page__file-meta"><strong>{form.image.name}</strong><span>{form.image.type.replace("image/", "").toUpperCase()} · {formatAdminImageSize(form.image.size)}</span></p>}{selectedMedia && <p className="admin-page__selection-label">{t("admin.media.selected")}: {selectedMedia.label}</p>}{preview && <div className="admin-banner-previews"><figure><figcaption>{t("admin.banners.desktopPreview")}</figcaption><img className="admin-banner-previews__desktop" src={preview} alt={form.alt_text_vi || t("admin.banners.currentImage")}/></figure><figure><figcaption>{t("admin.banners.mobilePreview")}</figcaption><img className="admin-banner-previews__mobile" src={preview} alt={form.alt_text_vi || t("admin.banners.currentImage")}/></figure></div>}<label className="admin-page__checkbox"><input type="checkbox" name="is_active" checked={form.is_active} onChange={change}/>{t("admin.banners.active")}</label>
     <div className="admin-page__actions"><button className="admin-page__button" disabled={busy}>{t("admin.common.save")}</button><button type="button" className="admin-page__button admin-page__button--ghost" onClick={closeDialog} disabled={busy}>{t("admin.common.cancel")}</button></div>
   </form></div>}
   <ConfirmModal isOpen={Boolean(pendingDelete)} title={t("admin.common.confirmDelete")} message={t("admin.banners.confirmDelete")} onConfirm={remove} onCancel={() => setPendingDelete(null)} busy={busy}/>

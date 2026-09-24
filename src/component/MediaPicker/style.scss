@@ -1,0 +1,141 @@
+.media-picker {
+  display: grid;
+  gap: 12px;
+
+  > .admin-page__button {
+    justify-self: start;
+  }
+
+  &__panel {
+    background: var(--color-surface-soft);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    display: grid;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  &__heading {
+    align-items: start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+
+    h4 {
+      color: var(--color-heading);
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    p,
+    > span {
+      color: var(--color-muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    > span {
+      flex: none;
+    }
+  }
+
+  &__filters {
+    align-items: end;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 180px) auto;
+
+    label {
+      color: #344054;
+      display: grid;
+      font-size: 12px;
+      font-weight: 700;
+      gap: 5px;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    list-style: none;
+
+    li > button {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      color: var(--color-text);
+      cursor: pointer;
+      display: grid;
+      gap: 9px;
+      height: 100%;
+      overflow: hidden;
+      padding: 0 0 12px;
+      text-align: left;
+      width: 100%;
+
+      &:hover:not(:disabled) {
+        border-color: var(--color-primary);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgba(0, 136, 116, 0.24);
+        outline-offset: 2px;
+      }
+
+      &:disabled {
+        cursor: wait;
+        opacity: 0.65;
+      }
+    }
+
+    img {
+      aspect-ratio: 4 / 3;
+      background: #eef4f1;
+      display: block;
+      object-fit: contain;
+      width: 100%;
+    }
+  }
+
+  &__card-copy,
+  &__select {
+    display: grid;
+    gap: 3px;
+    padding: 0 12px;
+  }
+
+  &__card-copy strong {
+    display: -webkit-box;
+    font-size: 13px;
+    line-height: 1.45;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  &__card-copy small {
+    color: var(--color-muted);
+    font-size: 11px;
+  }
+
+  &__select {
+    color: var(--color-primary-hover);
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+@media (max-width: 700px) {
+  .media-picker__heading {
+    display: grid;
+  }
+
+  .media-picker__filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .media-picker__filters .admin-page__button {
+    justify-self: start;
+  }
+}

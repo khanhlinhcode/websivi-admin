@@ -5,10 +5,13 @@ import {
   challengeAdminMfaAPI,
   confirmAdminMfaAPI,
   getAdminAnalyticsAPI,
+  getAdminMediaAPI,
   getAdminProductsAPI,
   getAdminReviewsAPI,
   getAdminSiteSettingsAPI,
   reorderAdminProductImagesAPI,
+  reuseAdminCategoryImageAPI,
+  reuseAdminProductImageAPI,
   setupAdminMfaAPI,
   updateAdminSiteSettingsAPI,
 } from "./request";
@@ -70,6 +73,9 @@ describe("CMS and analytics request contracts", () => {
     await getAdminReviewsAPI({ visibility: "hidden", page: 2 });
     await getAdminAnalyticsAPI({ range: "90d" });
     await reorderAdminProductImagesAPI(4, [8, 7]);
+    await getAdminMediaAPI({ page: 2, kind: "banner" });
+    await reuseAdminProductImageAPI(4, { source_type: "banner", source_id: 9 }, true);
+    await reuseAdminCategoryImageAPI(3, { source_type: "product_image", source_id: 8 });
 
     expect(axios.mock.calls.map(([config]) => config)).toEqual([
       { url: "/admin/site-settings", method: "GET" },
@@ -77,6 +83,9 @@ describe("CMS and analytics request contracts", () => {
       { url: "/admin/reviews", method: "GET", params: { visibility: "hidden", page: 2 } },
       { url: "/admin/analytics/overview", method: "GET", params: { range: "90d" } },
       { url: "/admin/products/4/images/order", method: "PATCH", data: { image_ids: [8, 7] } },
+      { url: "/admin/media", method: "GET", params: { page: 2, kind: "banner", per_page: 24 } },
+      { url: "/admin/products/4/images/reuse", method: "POST", data: { media_source_type: "banner", media_source_id: 9, as_primary: true } },
+      { url: "/admin/categories/3/image/reuse", method: "POST", data: { media_source_type: "product_image", media_source_id: 8 } },
     ]);
   });
 

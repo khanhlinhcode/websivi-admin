@@ -25,6 +25,8 @@ sẵn sàng production.
   thử.
 - Dashboard, doanh thu, top sản phẩm, analytics và trạng thái queue.
 - CRUD sản phẩm, danh mục, ảnh Cloudinary, banner và nội dung CMS song ngữ.
+- Thư viện “Tất cả ảnh” tổng hợp ảnh sản phẩm, danh mục và banner để tìm kiếm,
+  xem nơi đang sử dụng và chọn lại ảnh đã tải lên mà không upload bản trùng.
 - Quản lý đơn hàng, người dùng, đánh giá và coupon.
 - Lọc đơn theo COD, SePay và trạng thái thanh toán. VNPay chỉ còn hiển thị/lọc
   các đơn lịch sử; Storefront không tạo giao dịch VNPay mới.
@@ -92,9 +94,17 @@ ngoài repository; không sao chép credential đó vào README, issue hoặc ch
 ## Sản phẩm và Cloudinary
 
 - Tạo hoặc sửa sản phẩm, sau đó tải ảnh vào thư viện của sản phẩm.
-- Hỗ trợ JPG, PNG và WEBP, tối đa 2 MB mỗi ảnh và 8 ảnh mỗi lần tải.
+- Hỗ trợ JPG/JPEG, PNG, WEBP, GIF và AVIF, tối đa 2 MB mỗi ảnh, kích thước tối
+  đa 6000 × 6000 px và tối đa 8 ảnh cho mỗi sản phẩm.
+- Mục `Tất cả ảnh` chỉ hiển thị media nghiệp vụ của sản phẩm, danh mục và banner;
+  avatar người dùng không được đưa vào thư viện dùng chung.
+- Khi sửa sản phẩm, danh mục hoặc banner, có thể chọn ảnh sẵn có từ thư viện.
+  API nhận định danh bản ghi nguồn thay vì cho trình duyệt gửi URL hoặc
+  `public_id` Cloudinary tùy ý.
 - Thay ảnh đại diện không tự xóa ảnh cũ; ảnh cũ vẫn có thể quản lý riêng.
 - Xóa ảnh đại diện sẽ chọn ảnh tiếp theo nếu còn; xóa hết sẽ hiển thị ảnh trống.
+- Xóa một nơi sử dụng không xóa tài nguyên Cloudinary nếu ảnh đó còn được dùng ở
+  nơi khác.
 - Laravel ký request Cloudinary. Trình duyệt không nhận API secret và không được
   tự gửi `public_id` tùy ý.
 - Nếu Cloudinary lỗi, API trả lỗi và không âm thầm chuyển sang lưu file local.
@@ -119,7 +129,7 @@ và `STOREFRONT_DIR` nếu các repo nằm ở vị trí khác.
 Backend regression liên quan Admin:
 
 ```bash
-php artisan test --filter='AdminProductImagesTest|AuthTest|ProductApiTest|AdminTest'
+php artisan test --filter='AdminMediaLibraryTest|AdminProductImagesTest|AuthTest|ProductApiTest|AdminTest'
 ```
 
 ## Cloudflare Pages deployment

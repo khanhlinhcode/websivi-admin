@@ -9,5 +9,5 @@ input, textarea { caret-color: #00705b; }
 button:disabled { opacity: .6; cursor: not-allowed; }
 button, input, select, textarea { font: inherit; }
 table { font-variant-numeric: tabular-nums; }
-.admin-page__table-wrap, .admin__header__nav { scrollbar-color: #729386 #edf4f0; scrollbar-width: thin; }
+.admin-page__table-wrap { scrollbar-color: #729386 #edf4f0; scrollbar-width: thin; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
