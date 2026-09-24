@@ -80,6 +80,11 @@
     border-radius: 4px;
     cursor: pointer;
     border: none;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.62;
+    }
   }
   &__error {
     color: #c0392b;
@@ -111,5 +116,41 @@
     background: transparent;
     color: map.get($theme-colors, "main");
     cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid map.get($theme-colors, "main");
+      outline-offset: 3px;
+    }
+  }
+  &__helper,
+  &__cooldown {
+    color: var(--color-muted);
+    font-size: 13px;
+    line-height: 20px;
+    margin: 0;
+  }
+  &__cooldown {
+    color: #8a5a00;
+  }
+  &__secondary-button {
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-surface);
+    color: map.get($theme-colors, "nomal-text");
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+
+    &:hover {
+      border-color: map.get($theme-colors, "main");
+      color: map.get($theme-colors, "main");
+    }
+
+    &:focus-visible {
+      outline: 2px solid map.get($theme-colors, "main");
+      outline-offset: 2px;
+    }
   }
 }
